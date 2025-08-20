@@ -1,4 +1,4 @@
-import React, { useState,useRef,useEffect } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import {
   CheckCircleFilled,
   HeartOutlined,
@@ -10,8 +10,8 @@ import {
 import "./App.css";
 import "./css/style.scss";
 import { AvatarLoader } from "./loaders";
-import { useScreenshot } from 'use-react-screenshot'
-
+import { useScreenshot } from "use-react-screenshot";
+import { language } from "./language";
 
 const tweetFormat = (tweet) => {
   tweet = tweet
@@ -37,7 +37,8 @@ const formatNumber = (number) => {
 };
 
 function App() {
-  const tweetRef = useRef(null)
+  const tweetRef = useRef(null);
+  const downloadRef = useRef();
   const [name, setName] = useState();
   const [username, setUsername] = useState();
   const [isVerified, setIsVerified] = useState(false);
@@ -46,15 +47,20 @@ function App() {
   const [retweets, setRetweets] = useState(0);
   const [quoteTweets, setQuoteTweets] = useState(0);
   const [likes, setLikes] = useState(0);
-  const [image, takeScreenshot] = useScreenshot()
-  const getImage = () => takeScreenshot(tweetRef.current)
-
-useEffect(() => {
+  const [image, takeScreenshot] = useScreenshot();
+  const getImage = () => takeScreenshot(tweetRef.current);
+  const [lang, setLang] = useState('tr')
+  const [langText, setLangText] = useState(language[lang])
+  useEffect(() => {
+    setLangText(language[lang]);
+  }, [lang])
   
-  console.log(image)
-}, [image])
-
-
+  
+  useEffect(() => {
+    if (image) {
+      downloadRef.current.click();
+    }
+  }, [image]);
 
   const avatarHandle = (e) => {
     const file = e.target.files[0];
@@ -64,13 +70,19 @@ useEffect(() => {
     });
     reader.readAsDataURL(file);
   };
+
+  const fetchTwitterInfo = () => {
+    fetch(
+      `https://typeahead-js-twitter-api-proxy.herokuapp.com/demo/search?q=$[username]`
+    ).then((res) => res.json().then((data) => console.log(data)));
+  };
   return (
     <>
       <div className="tweet-settings">
-        <h3>Tweet Ayarları</h3>
+        <h3>{langText?.settings}</h3>
         <ul>
           <li>
-            <label>Ad Soyad</label>
+            <label>{langText?.name}</label>
             <input
               className="input"
               type="text"
@@ -79,7 +91,7 @@ useEffect(() => {
             />
           </li>
           <li>
-            <label>Kullanıcı Adı</label>
+            <label>{langText?.username}</label>
             <input
               className="input"
               type="text"
@@ -110,7 +122,7 @@ useEffect(() => {
             />
           </li>
           <li>
-            <label>Alıntı Tweet</label>
+            <label>{langText?.quoteTweets}</label>
             <input
               className="input"
               type="number"
@@ -119,7 +131,7 @@ useEffect(() => {
             />
           </li>
           <li>
-            <label>Beğeni</label>
+            <label>{langText?.likes}</label>
             <input
               className="input"
               type="number"
@@ -128,13 +140,29 @@ useEffect(() => {
             />
           </li>
           <button onClick={getImage}> Oluştur</button>
-            <div className="download-url">
-             {image && (<a href={image} download="tweet.png" >Tweeti İndir</a>)}
-
-            </div>
+          <div className="download-url">
+            {image && (
+              <a ref={downloadRef} href={image} download="tweet.png">
+                Tweeti İndir
+              </a>
+            )}
+          </div>
         </ul>
       </div>
       <div className="tweet-container">
+        <div className="app-language">
+          <span onClick={()=>setLang('tr')} className={lang==='tr'&& 'active'}>Türkçe</span>
+          <span onClick={()=>setLang('en')} className={lang==='en'&& 'active'}>English</span>
+        </div>
+        <div className="fetch-info">
+          <input
+            placeholder="Twitter kullanıcı adını yazın"
+            type="text"
+            value={username}
+            onChange={(e) => setUsername(e.target.value)}
+          />
+          <button onClick={fetchTwitterInfo}>Bilgileri Çek</button>
+        </div>
         <div className="tweet" ref={tweetRef}>
           <div className="tweet-author">
             {(avatar && <img src={avatar} />) || <AvatarLoader />}
